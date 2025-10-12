@@ -1,0 +1,2 @@
+SOURCE_PATH=D:\Sanika\III rd YEAR\5 th Semester\SP\CP\AutoBackupTool\Source
+DEST_PATH=D:\Sanika\III rd YEAR\5 th Semester\SP\CP\AutoBackupTool\backups
