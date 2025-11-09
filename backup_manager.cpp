@@ -1,7 +1,7 @@
 #include "backup_manager.h"
 #include <iostream>
 #include <fstream>
-#include <windows.h>  // For file change notification
+#include <windows.h>
 #include <chrono>
 #include <iomanip>
 #include <thread>
@@ -11,7 +11,6 @@ namespace fs = std::filesystem;
 
 BackupManager::BackupManager(const string& src, const string& dest)
     : sourcePath(src), backupPath(dest) {
-    // Ensure backup folder exists
     fs::create_directories(backupPath);
     fs::create_directories("logs");
 }
@@ -30,7 +29,6 @@ void BackupManager::performBackup() {
             else if (fs::is_regular_file(entry.path())) {
                 string filename = entry.path().filename().string();
 
-                // Skip temporary files (Word/Excel/Temp)
                 if (filename.substr(0, 2) == "~$" || entry.path().extension() == ".tmp")
                     continue;
 
@@ -40,7 +38,7 @@ void BackupManager::performBackup() {
                     auto srcTime = fs::last_write_time(entry.path());
                     auto destTime = fs::last_write_time(destFile);
                     if (srcTime <= destTime) {
-                        copyFileFlag = false; // File is unchanged
+                        copyFileFlag = false;
                     }
                 }
 
@@ -63,8 +61,6 @@ void BackupManager::performBackup() {
 
 void BackupManager::logActivity(const std::string& message) {
     std::ofstream logFile("logs/backup_log.txt", std::ios::app);
-
-    // Get current timestamp
     auto now = std::chrono::system_clock::now();
     auto t = std::chrono::system_clock::to_time_t(now);
 
@@ -90,10 +86,37 @@ void BackupManager::startMonitoring() {
         DWORD waitStatus = WaitForSingleObject(hDir, INFINITE);
 
         if (waitStatus == WAIT_OBJECT_0) {
-            // Small delay to avoid copying incomplete temp files
             std::this_thread::sleep_for(std::chrono::milliseconds(300));
             performBackup();
             FindNextChangeNotification(hDir);
         }
+    }
+}
+
+// 🔹 New Restore Function
+void BackupManager::restoreFile(const std::string& filename) {
+    fs::path backupFile = fs::path(backupPath) / filename;
+    fs::path restorePath = fs::path(sourcePath) / filename;
+
+    std::ofstream logFile("logs/backup_log.txt", std::ios::app);
+    auto now = std::chrono::system_clock::to_time_t(std::chrono::system_clock::now());
+
+    if (!fs::exists(backupFile)) {
+        cout << "❌ File not found in backup folder: " << filename << endl;
+        logFile << std::put_time(std::localtime(&now), "%Y-%m-%d %H:%M:%S")
+                << " - Restore failed (file not found): " << filename << endl;
+        return;
+    }
+
+    try {
+        fs::copy_file(backupFile, restorePath, fs::copy_options::overwrite_existing);
+        cout << "✅ File restored successfully: " << filename << endl;
+        logFile << std::put_time(std::localtime(&now), "%Y-%m-%d %H:%M:%S")
+                << " - Restored file: " << filename << endl;
+    }
+    catch (const fs::filesystem_error& e) {
+        cerr << "Error restoring file: " << e.what() << endl;
+        logFile << std::put_time(std::localtime(&now), "%Y-%m-%d %H:%M:%S")
+                << " - Restore error: " << e.what() << endl;
     }
 }

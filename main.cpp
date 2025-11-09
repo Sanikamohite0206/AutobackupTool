@@ -5,7 +5,6 @@
 
 using namespace std;
 
-// Function to read settings
 string getSetting(const string& key) {
     ifstream config("config/settings.txt");
     if (!config.is_open()) {
@@ -16,20 +15,16 @@ string getSetting(const string& key) {
     string line;
     while (getline(config, line)) {
         if (line.empty() || line[0] == '#') continue;
-
         size_t pos = line.find('=');
         if (pos == string::npos) continue;
 
         string k = line.substr(0, pos);
         string v = line.substr(pos + 1);
-
-        // Trim spaces
         k.erase(0, k.find_first_not_of(" \t"));
         k.erase(k.find_last_not_of(" \t") + 1);
         v.erase(0, v.find_first_not_of(" \t"));
         v.erase(v.find_last_not_of(" \t") + 1);
 
-        // Remove quotes if present
         if (!v.empty() && v.front() == '"' && v.back() == '"') {
             v = v.substr(1, v.size() - 2);
         }
@@ -54,7 +49,8 @@ int main() {
         cout << "\n===== Auto Backup Tool =====\n";
         cout << "1. Start Backup\n";
         cout << "2. View Logs\n";
-        cout << "3. Exit\n";
+        cout << "3. Restore File\n";
+        cout << "4. Exit\n";
         cout << "Enter your choice: ";
         cin >> choice;
 
@@ -63,7 +59,7 @@ int main() {
                 cout << "Performing initial backup...\n";
                 manager.performBackup();
                 cout << "Monitoring for changes (Press Ctrl+C to stop)...\n";
-                manager.startMonitoring();  // Infinite monitoring loop
+                manager.startMonitoring();
                 break;
 
             case 2: {
@@ -80,7 +76,15 @@ int main() {
                 break;
             }
 
-            case 3:
+            case 3: {
+                string filename;
+                cout << "Enter filename to restore (e.g., notes.txt): ";
+                cin >> filename;
+                manager.restoreFile(filename);
+                break;
+            }
+
+            case 4:
                 cout << "Exiting program...\n";
                 break;
 
@@ -88,7 +92,7 @@ int main() {
                 cout << "Invalid choice! Please try again.\n";
         }
 
-    } while (choice != 3);
+    } while (choice != 4);
 
     return 0;
 }

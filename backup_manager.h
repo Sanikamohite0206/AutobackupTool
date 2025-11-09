@@ -14,6 +14,7 @@ public:
     void startMonitoring();     // Watches for file changes
     void performBackup();       // Copies updated files
     void logActivity(const std::string& message);  // Writes to log
+    void restoreFile(const std::string& filename); // 🔹 New function
 };
 
 #endif
